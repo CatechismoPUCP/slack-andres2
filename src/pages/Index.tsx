@@ -18,6 +18,13 @@ const Index = () => {
           return;
         }
 
+        // Check for pending invite code first
+        const pendingInvite = sessionStorage.getItem('pendingInviteCode');
+        if (pendingInvite) {
+          navigate(`/join/${pendingInvite}`);
+          return;
+        }
+
         // Fetch user data
         const { data: userData } = await supabase
           .from("users")

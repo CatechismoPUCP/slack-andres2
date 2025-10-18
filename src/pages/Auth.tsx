@@ -20,7 +20,13 @@ export default function Auth() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        // Check for pending invite code
+        const pendingInvite = sessionStorage.getItem('pendingInviteCode');
+        if (pendingInvite) {
+          navigate(`/join/${pendingInvite}`);
+        } else {
+          navigate("/");
+        }
       }
     };
     checkSession();
@@ -50,7 +56,14 @@ export default function Auth() {
           password,
         });
         if (error) throw error;
-        navigate("/");
+        
+        // Check for pending invite code
+        const pendingInvite = sessionStorage.getItem('pendingInviteCode');
+        if (pendingInvite) {
+          navigate(`/join/${pendingInvite}`);
+        } else {
+          navigate("/");
+        }
       }
     } catch (error: any) {
       toast({

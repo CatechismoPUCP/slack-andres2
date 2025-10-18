@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { workspaceInvite } from "@/actions/workspaces";
+import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,16 @@ export default function JoinWorkspace() {
         return;
       }
 
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Store invite code and redirect to auth
+        sessionStorage.setItem('pendingInviteCode', inviteCode);
+        navigate('/auth');
+        return;
+      }
+
       try {
         const workspace = await workspaceInvite(inviteCode);
         
@@ -30,6 +41,8 @@ export default function JoinWorkspace() {
           description: `You've joined ${workspace.name}`,
         });
 
+        // Clear any stored invite code
+        sessionStorage.removeItem('pendingInviteCode');
         navigate(`/workspace/${workspace.id}`);
       } catch (err: any) {
         setError(err.message || "Failed to join workspace");
