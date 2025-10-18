@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Copy, Check, Users, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import type { Workspace as WorkspaceType } from "@/types/app";
 
 export default function Workspace() {
@@ -51,8 +52,13 @@ export default function Workspace() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
-      <div className="max-w-4xl w-full space-y-6">
+    <div className="min-h-screen bg-gradient-subtle p-4">
+      <div className="max-w-4xl mx-auto space-y-6 py-8">
+        {/* Workspace Switcher */}
+        <div className="max-w-md">
+          <WorkspaceSwitcher currentWorkspaceId={workspaceId} />
+        </div>
+
         {/* Workspace Header */}
         <Card className="shadow-elegant">
           <CardHeader className="text-center">
