@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Github, Mail, KeyRound } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { JoinByCodeDialog } from "@/components/JoinByCodeDialog";
 import { ensureUserRecord } from "@/lib/ensure-user-record";
@@ -125,9 +126,7 @@ export default function Auth() {
       <Card className="w-full max-w-md shadow-elegant">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center mb-4">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow">
-              <Mail className="h-8 w-8 text-white" />
-            </div>
+            <img src={logo} alt="TeamChat Logo" className="h-24 w-24 object-contain" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             Welcome to TeamChat
