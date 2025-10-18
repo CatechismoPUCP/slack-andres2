@@ -18,6 +18,7 @@ interface MessageListProps {
   hasNextPage?: boolean;
   fetchNextPage?: () => void;
   isFetchingNextPage?: boolean;
+  isDM?: boolean;
 }
 
 export function MessageList({
@@ -32,6 +33,7 @@ export function MessageList({
   hasNextPage,
   fetchNextPage,
   isFetchingNextPage,
+  isDM = false,
 }: MessageListProps) {
   const { chatRef, bottomRef } = useChatScrollHandler({
     messages,
@@ -74,7 +76,7 @@ export function MessageList({
 
         {!hasNextPage && (
           <IntroBanner
-            type="channel"
+            type={isDM ? "dm" : "channel"}
             name={channelName}
             createdAt={channelCreatedAt}
           />

@@ -36,7 +36,7 @@ export function InfoSection({
   currentUserId,
   onRefresh 
 }: InfoSectionProps) {
-  const { channelId } = useParams();
+  const { channelId, recipientId } = useParams();
   const { color } = useColorPreferences();
   const [channelsOpen, setChannelsOpen] = useState(true);
   const [dmsOpen, setDmsOpen] = useState(false);
@@ -182,12 +182,19 @@ export function InfoSection({
                     No other members
                   </p>
                 ) : (
-                  filteredMembers.map((member) => (
-                    <Link
-                      key={member.id}
-                      to={`/workspace/${workspaceId}/dm/${member.id}`}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                    >
+                  filteredMembers.map((member) => {
+                    const isActiveDM = recipientId === member.id;
+                    return (
+                      <Link
+                        key={member.id}
+                        to={`/workspace/${workspaceId}/dm/${member.id}`}
+                        className={cn(
+                          "flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                          isActiveDM 
+                            ? "bg-accent text-accent-foreground font-medium" 
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
                       <div className="relative">
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={member.avatar_url} />
@@ -203,9 +210,10 @@ export function InfoSection({
                           )}
                         />
                       </div>
-                      <span className="truncate">{member.name || member.email}</span>
-                    </Link>
-                  ))
+                        <span className="truncate">{member.name || member.email}</span>
+                      </Link>
+                    );
+                  })
                 )}
               </CollapsibleContent>
             </Collapsible>

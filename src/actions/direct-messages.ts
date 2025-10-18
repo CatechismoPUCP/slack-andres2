@@ -34,7 +34,7 @@ export async function getDirectMessages(
   otherUserId: string,
   page = 0,
   pageSize = 50
-): Promise<DirectMessage[]> {
+): Promise<any[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
@@ -44,7 +44,7 @@ export async function getDirectMessages(
 
   const { data, error } = await supabase
     .from("direct_messages")
-    .select("*")
+    .select("*, senderUser:users!direct_messages_user_fkey(*)")
     .or(`and(user_one.eq.${userOne},user_two.eq.${userTwo})`)
     .order("created_at", { ascending: false })
     .range(page * pageSize, (page + 1) * pageSize - 1);
