@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MainContent } from "@/components/MainContent";
 import { Sidebar } from "@/components/Sidebar";
@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Workspace() {
   const { workspaceId } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState<WorkspaceType | null>(null);
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -56,6 +57,12 @@ export default function Workspace() {
   useEffect(() => {
     loadWorkspaceData();
   }, [workspaceId]);
+
+  useEffect(() => {
+    if (!loading && channels.length > 0 && workspaceId) {
+      navigate(`/workspace/${workspaceId}/channel/${channels[0].id}`);
+    }
+  }, [loading, channels, workspaceId, navigate]);
 
   if (loading) {
     return (
