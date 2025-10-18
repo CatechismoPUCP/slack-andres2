@@ -223,6 +223,7 @@ export type Database = {
           invite_code: string
           members: string[] | null
           name: string
+          password: string | null
           regulators: string[] | null
           slug: string
           super_admin: string
@@ -235,6 +236,7 @@ export type Database = {
           invite_code: string
           members?: string[] | null
           name: string
+          password?: string | null
           regulators?: string[] | null
           slug: string
           super_admin: string
@@ -247,6 +249,7 @@ export type Database = {
           invite_code?: string
           members?: string[] | null
           name?: string
+          password?: string | null
           regulators?: string[] | null
           slug?: string
           super_admin?: string
@@ -289,6 +292,10 @@ export type Database = {
       update_user_channels: {
         Args: { channel_id: string; user_id: string }
         Returns: undefined
+      }
+      verify_workspace_password: {
+        Args: { password_param: string; workspace_id_param: string }
+        Returns: boolean
       }
     }
     Enums: {

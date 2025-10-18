@@ -18,6 +18,7 @@ interface CreateWorkspaceDialogProps {
 export function CreateWorkspaceDialog({ open, onOpenChange, onSuccess }: CreateWorkspaceDialogProps) {
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [password, setPassword] = useState('');
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -25,11 +26,17 @@ export function CreateWorkspaceDialog({ open, onOpenChange, onSuccess }: CreateW
   const handleNext = () => {
     if (step === 1 && name.trim()) {
       setStep(2);
+    } else if (step === 2) {
+      setStep(3);
     }
   };
 
   const handleBack = () => {
-    setStep(1);
+    if (step === 3) {
+      setStep(2);
+    } else if (step === 2) {
+      setStep(1);
+    }
   };
 
   const handleCreate = async () => {
@@ -49,6 +56,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange, onSuccess }: CreateW
           name: name.trim(),
           slug,
           invite_code: inviteCode,
+          password: password || null,
           super_admin: user.id,
           members: [user.id],
           image_url: imageUrl || null,
@@ -67,6 +75,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange, onSuccess }: CreateW
       onOpenChange(false);
       setName('');
       setImageUrl('');
+      setPassword('');
       setStep(1);
       onSuccess?.();
       navigate(`/workspace/${workspace.id}`);
@@ -83,7 +92,7 @@ export function CreateWorkspaceDialog({ open, onOpenChange, onSuccess }: CreateW
         <DialogHeader>
           <DialogTitle>Create a workspace</DialogTitle>
           <DialogDescription>
-            {step === 1 ? 'Give your workspace a name' : 'Add a workspace image (optional)'}
+            {step === 1 ? 'Give your workspace a name' : step === 2 ? 'Add a workspace image (optional)' : 'Set a password (optional)'}
           </DialogDescription>
         </DialogHeader>
 
@@ -105,9 +114,33 @@ export function CreateWorkspaceDialog({ open, onOpenChange, onSuccess }: CreateW
               </Button>
             </div>
           </div>
-        ) : (
+        ) : step === 2 ? (
           <div className="space-y-4">
             <StandaloneImageUpload value={imageUrl} onChange={setImageUrl} />
+            <div className="flex justify-between gap-2">
+              <Button variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <Button onClick={handleNext}>
+                Next
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="workspace-password">Password (optional)</Label>
+              <Input
+                id="workspace-password"
+                type="password"
+                placeholder="Set a password to protect this workspace"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Users will need this password to join via invite link
+              </p>
+            </div>
             <div className="flex justify-between gap-2">
               <Button variant="outline" onClick={handleBack}>
                 Back

@@ -17,6 +17,7 @@ export type Workspace = {
   slug: string;
   image_url: string | null;
   invite_code: string;
+  password: string | null;
   super_admin: string;
   members: string[] | null;
   channels: string[] | null;
