@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Hash, ChevronDown, Plus, User } from "lucide-react";
+import { Hash, ChevronDown, Plus, User, UserPlus, Copy, Check } from "lucide-react";
 import { Channel, User as UserType } from "@/types/app";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,13 @@ import {
 import { cn } from "@/lib/utils";
 import { useColorPreferences } from "@/providers/color-preferences";
 import { CreateChannelDialog } from "./CreateChannelDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface InfoSectionProps {
   workspaceId: string;
@@ -34,6 +41,32 @@ export function InfoSection({
   const [channelsOpen, setChannelsOpen] = useState(true);
   const [dmsOpen, setDmsOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const fetchInviteCode = async () => {
+      const { data } = await supabase
+        .from("workspaces")
+        .select("invite_code")
+        .eq("id", workspaceId)
+        .single();
+      
+      if (data) {
+        setInviteCode(data.invite_code);
+      }
+    };
+
+    fetchInviteCode();
+  }, [workspaceId]);
+
+  const copyInviteLink = () => {
+    const inviteLink = `${window.location.origin}/join/${inviteCode}`;
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    toast.success("Invite link copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const bgClass = color === 'green' 
     ? 'bg-[#0d2818]' 
@@ -54,6 +87,36 @@ export function InfoSection({
       >
         <ScrollArea className="h-full">
           <div className="p-4 space-y-4">
+            {/* Invite Button */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start gap-2" size="sm">
+                  <UserPlus className="h-4 w-4" />
+                  Invite People
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-semibold mb-1">Invite to Workspace</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Share this link with people you want to invite
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={`${window.location.origin}/join/${inviteCode}`}
+                      className="flex-1 px-3 py-2 text-sm border rounded-md bg-muted"
+                    />
+                    <Button size="sm" onClick={copyInviteLink}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {/* Channels Section */}
             <Collapsible open={channelsOpen} onOpenChange={setChannelsOpen}>
               <div className="flex items-center justify-between">
