@@ -55,12 +55,15 @@ export function CreateChannelDialog({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("🔥 [CreateChannel] START", { values, workspaceId });
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      console.log("🔥 [CreateChannel] Creating channel...", { userId: user.id });
       const channel = await createChannel(values.name, workspaceId, user.id);
+      console.log("🔥 [CreateChannel] SUCCESS", { channel });
 
       toast({
         title: "Channel created",
@@ -69,7 +72,9 @@ export function CreateChannelDialog({
 
       form.reset();
       onOpenChange(false);
+      console.log("🔥 [CreateChannel] Calling onSuccess callback");
       onSuccess?.();
+      console.log("🔥 [CreateChannel] Navigating to channel", { channelId: channel.id });
       navigate(`/workspace/${workspaceId}/channel/${channel.id}`);
     } catch (error) {
       console.error("Error creating channel:", error);

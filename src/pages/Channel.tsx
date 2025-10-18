@@ -37,6 +37,7 @@ export default function Channel() {
   } = useChannelMessages(channelId || "", workspaceId || "");
 
   const loadChannelData = async () => {
+    console.log("📡 [Channel] loadChannelData START", { channelId, workspaceId });
     if (!channelId || !workspaceId) return;
 
     try {
@@ -57,6 +58,7 @@ export default function Channel() {
         .single();
 
       if (userData) {
+        console.log("📡 [Channel] Current user loaded", { userId: userData.id });
         setCurrentUser(userData);
       }
 
@@ -68,6 +70,7 @@ export default function Channel() {
         .single();
 
       if (channelData) {
+        console.log("📡 [Channel] Current channel loaded", { channelId: channelData.id, name: channelData.name });
         setChannel(channelData);
       }
 
@@ -79,11 +82,16 @@ export default function Channel() {
         .order("created_at", { ascending: true });
 
       if (channelsData) {
+        console.log("📡 [Channel] All workspace channels loaded", { 
+          count: channelsData.length, 
+          channels: channelsData.map(c => ({ id: c.id, name: c.name }))
+        });
         setAllChannels(channelsData);
       }
     } catch (error) {
-      console.error("Error loading channel data:", error);
+      console.error("❌ [Channel] Error loading channel data:", error);
     } finally {
+      console.log("📡 [Channel] loadChannelData COMPLETE");
       setLoading(false);
     }
   };
@@ -107,7 +115,15 @@ export default function Channel() {
           filter: `workspace_id=eq.${workspaceId}`
         },
         (payload) => {
-          setAllChannels(prev => [...prev, payload.new as ChannelType]);
+          console.log("🔴 [Channel] REALTIME: New channel inserted", payload.new);
+          setAllChannels(prev => {
+            const updated = [...prev, payload.new as ChannelType];
+            console.log("🔴 [Channel] Updated channels state", { 
+              previousCount: prev.length, 
+              newCount: updated.length 
+            });
+            return updated;
+          });
         }
       )
       .subscribe();

@@ -36,6 +36,14 @@ export function InfoSection({
   currentUserId,
   onRefresh 
 }: InfoSectionProps) {
+  console.log("🔍 [InfoSection] RENDER START", {
+    workspaceId,
+    channelsCount: channels.length,
+    channelsData: channels.map(c => ({ id: c.id, name: c.name, workspace_id: c.workspace_id })),
+    membersCount: members.length,
+    membersData: members.map(m => ({ id: m.id, name: m.name, email: m.email })),
+    currentUserId
+  });
   const { channelId, recipientId } = useParams();
   const { color } = useColorPreferences();
   const [channelsOpen, setChannelsOpen] = useState(true);
@@ -164,6 +172,13 @@ export function InfoSection({
                 </Button>
               </div>
               <CollapsibleContent className="space-y-1 mt-2">
+                {(() => {
+                  console.log("🔍 [InfoSection] RENDERING CHANNELS", {
+                    channelsLength: channels.length,
+                    channels: channels.map(c => ({ id: c.id, name: c.name }))
+                  });
+                  return null;
+                })()}
                 {channels.length === 0 ? (
                   <p className="text-xs text-muted-foreground px-2 py-1">
                     No channels yet
