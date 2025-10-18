@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 type ColorPreference = '' | 'green' | 'blue';
 
@@ -10,14 +10,27 @@ interface ColorPreferencesContextType {
 const ColorPreferencesContext = createContext<ColorPreferencesContextType | undefined>(undefined);
 
 export function ColorPreferencesProvider({ children }: { children: ReactNode }) {
-  const [color, setColor] = useState<ColorPreference>(() => {
-    const stored = localStorage.getItem('color-preference');
-    return (stored as ColorPreference) || '';
-  });
+  const [color, setColor] = useState<ColorPreference>('');
+
+  useEffect(() => {
+    // Load color preference from localStorage on mount
+    try {
+      const stored = localStorage.getItem('color-preference');
+      if (stored && (stored === 'green' || stored === 'blue')) {
+        setColor(stored as ColorPreference);
+      }
+    } catch (error) {
+      console.error('Failed to load color preference:', error);
+    }
+  }, []);
 
   const selectColor = (newColor: ColorPreference) => {
     setColor(newColor);
-    localStorage.setItem('color-preference', newColor);
+    try {
+      localStorage.setItem('color-preference', newColor);
+    } catch (error) {
+      console.error('Failed to save color preference:', error);
+    }
   };
 
   useEffect(() => {
