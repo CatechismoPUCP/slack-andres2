@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { MoreVertical, Pencil, Trash, FileText } from "lucide-react";
+import { MoreVertical, Pencil, Trash, FileText, ExternalLink } from "lucide-react";
 import { MessageWithUser } from "@/types/app";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+} from "@/components/ui/dialog";
 
 interface MessageItemProps {
   message: MessageWithUser;
@@ -32,6 +36,7 @@ export function MessageItem({
 }: MessageItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content || "");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const isOwnMessage = message.user_id === currentUserId;
   const canDelete = isOwnMessage || isAdmin || isRegulator;
@@ -129,32 +134,34 @@ export function MessageItem({
               {message.file_url && (
                 <div className="mt-2">
                   {isImageFile(message.file_url) ? (
-                    <a href={message.file_url} target="_blank" rel="noopener noreferrer">
-                      <img 
-                        src={message.file_url} 
-                        alt="Attachment" 
-                        className="max-w-md rounded-md border border-border"
-                      />
-                    </a>
+                    <img 
+                      src={message.file_url} 
+                      alt="Attachment" 
+                      loading="lazy"
+                      className="max-w-md rounded-md border border-border cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setLightboxOpen(true)}
+                    />
                   ) : isPdfFile(message.file_url) ? (
                     <a 
                       href={message.file_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors"
                     >
                       <FileText className="h-4 w-4" />
                       View PDF
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   ) : (
                     <a 
                       href={message.file_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors"
                     >
                       <FileText className="h-4 w-4" />
                       Download File
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
                 </div>
@@ -193,6 +200,19 @@ export function MessageItem({
           </DropdownMenu>
         )}
       </div>
+
+      {/* Image Lightbox */}
+      {message.file_url && isImageFile(message.file_url) && (
+        <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+          <DialogContent className="max-w-4xl p-0 overflow-hidden">
+            <img
+              src={message.file_url}
+              alt="Full size image"
+              className="w-full h-auto"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

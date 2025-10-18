@@ -6,15 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Send, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useColorPreferences } from "@/providers/color-preferences";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ChatFileUpload } from "./ChatFileUpload";
 
 interface TextEditorProps {
-  onSend: (content: string) => void;
+  onSend: (content: string, fileUrl?: string) => void;
   isSending?: boolean;
   channelName: string;
 }
 
 export function TextEditor({ onSend, isSending, channelName }: TextEditorProps) {
   const { color } = useColorPreferences();
+  const [fileDialogOpen, setFileDialogOpen] = useState(false);
+  const [pendingFileUrl, setPendingFileUrl] = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -46,11 +57,19 @@ export function TextEditor({ onSend, isSending, channelName }: TextEditorProps) 
     const html = editor.getHTML();
     const text = editor.getText();
 
-    // Minimum 2 characters validation
-    if (text.trim().length < 2) return;
+    // Allow sending if there's content or a file
+    if (text.trim().length < 2 && !pendingFileUrl) return;
 
-    onSend(html);
+    onSend(pendingFileUrl ? "" : html, pendingFileUrl || undefined);
     editor.commands.clearContent();
+    setPendingFileUrl(null);
+  };
+
+  const handleFileUploaded = (fileUrl: string) => {
+    setPendingFileUrl(fileUrl);
+    setFileDialogOpen(false);
+    // Automatically send the file
+    onSend("", fileUrl);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -60,7 +79,7 @@ export function TextEditor({ onSend, isSending, channelName }: TextEditorProps) 
     }
   };
 
-  const isDisabled = !editor || editor.getText().trim().length < 2 || isSending;
+  const isDisabled = !editor || (editor.getText().trim().length < 2 && !pendingFileUrl) || isSending;
 
   const bgClass =
     color === "green"
@@ -70,28 +89,46 @@ export function TextEditor({ onSend, isSending, channelName }: TextEditorProps) 
       : "bg-background border-border";
 
   return (
-    <div className={cn("border-t", bgClass)} onKeyDown={handleKeyDown}>
-      <MenuBar editor={editor} />
-      <EditorContent editor={editor} />
-      <div className="flex items-center justify-between p-2 border-t border-border">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          title="Attach file (coming soon)"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button
-          onClick={handleSend}
-          disabled={isDisabled}
-          size="icon"
-          className="h-8 w-8"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+    <>
+      <div className={cn("border-t", bgClass)} onKeyDown={handleKeyDown}>
+        <MenuBar editor={editor} />
+        <EditorContent editor={editor} />
+        <div className="flex items-center justify-between p-2 border-t border-border">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            title="Attach file"
+            onClick={() => setFileDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={handleSend}
+            disabled={isDisabled}
+            size="icon"
+            className="h-8 w-8"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-    </div>
+
+      <Dialog open={fileDialogOpen} onOpenChange={setFileDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload File</DialogTitle>
+            <DialogDescription>
+              Upload an image or PDF to share in the chat (max 50MB)
+            </DialogDescription>
+          </DialogHeader>
+          <ChatFileUpload
+            onFileUploaded={handleFileUploaded}
+            onCancel={() => setFileDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -79,8 +79,8 @@ export default function Channel() {
     loadChannelData();
   }, [channelId, workspaceId]);
 
-  const handleSendMessage = (content: string) => {
-    sendMessage({ content, fileUrl: null });
+  const handleSendMessage = (content: string, fileUrl?: string) => {
+    sendMessage({ content, fileUrl: fileUrl || null });
   };
 
   if (loading || messagesLoading) {
