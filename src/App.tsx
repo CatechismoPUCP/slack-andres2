@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import CreateWorkspace from "./pages/CreateWorkspace";
 import JoinWorkspace from "./pages/JoinWorkspace";
 import Workspace from "./pages/Workspace";
+import Channel from "./pages/Channel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/create-workspace" element={<CreateWorkspace />} />
               <Route path="/join/:inviteCode" element={<JoinWorkspace />} />
               <Route path="/workspace/:workspaceId" element={<Workspace />} />
+              <Route path="/workspace/:workspaceId/channel/:channelId" element={<Channel />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
