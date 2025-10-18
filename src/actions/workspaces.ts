@@ -67,5 +67,26 @@ export async function workspaceInvite(inviteCode: string) {
     new_workspace: workspace.id,
   });
 
+  // Get all channels in the workspace and add user to them
+  const { data: workspaceChannels } = await supabase
+    .from("channels")
+    .select("id")
+    .eq("workspace_id", workspace.id);
+
+  // Add user to each channel's members array
+  if (workspaceChannels && workspaceChannels.length > 0) {
+    for (const channel of workspaceChannels) {
+      await supabase.rpc("update_channel_members", {
+        new_member: user.id,
+        channel_id: channel.id,
+      });
+      
+      await supabase.rpc("update_user_channels", {
+        user_id: user.id,
+        channel_id: channel.id,
+      });
+    }
+  }
+
   return workspace;
 }
