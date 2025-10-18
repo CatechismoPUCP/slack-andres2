@@ -54,7 +54,7 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
   if (!user) return null;
 
   return (
-    <div className="h-screen w-[280px] lg:w-[420px] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
+    <div className="h-screen w-[280px] lg:w-[420px] bg-background border-r border-border flex flex-col shrink-0">
       {/* Workspace Section */}
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">
@@ -63,22 +63,22 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
             <AvatarFallback>{user.name?.[0] || user.email[0]}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate text-sidebar-foreground">{user.name || 'User'}</p>
-            <p className="text-xs text-sidebar-foreground/70 truncate">{user.email}</p>
+            <p className="font-semibold text-sm truncate text-foreground">{user.name || 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         </div>
 
         {/* Navigation */}
         <div className="space-y-1">
-          <Button variant="ghost" className="w-full justify-start gap-2" size="sm" onClick={() => navigate(`/workspace/${workspaceId}`)}>
+          <Button variant="ghost" className="w-full justify-start gap-2 text-foreground hover:bg-accent hover:text-accent-foreground" size="sm" onClick={() => navigate(`/workspace/${workspaceId}`)}>
             <Home className="h-4 w-4" />
             <span>Home</span>
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2" size="sm" onClick={() => navigate(`/workspace/${workspaceId}/dms`)}>
+          <Button variant="ghost" className="w-full justify-start gap-2 text-foreground hover:bg-accent hover:text-accent-foreground" size="sm" onClick={() => navigate(`/workspace/${workspaceId}/dms`)}>
             <MessageSquare className="h-4 w-4" />
             <span>DMs</span>
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2" size="sm" onClick={() => setJoinDialogOpen(true)}>
+          <Button variant="ghost" className="w-full justify-start gap-2 text-foreground hover:bg-accent hover:text-accent-foreground" size="sm" onClick={() => setJoinDialogOpen(true)}>
             <UserPlus className="h-4 w-4" />
             <span>Join Workspace</span>
           </Button>
@@ -104,8 +104,8 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
                 <AvatarFallback>{user.name?.[0] || user.email[0]}</AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left min-w-0">
-                <p className="font-medium text-sm truncate text-sidebar-foreground">{user.name || 'User'}</p>
-                <p className="text-xs text-sidebar-foreground/70 truncate">
+                <p className="font-medium text-sm truncate text-foreground">{user.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground truncate">
                   {isAway ? '🌙 Away' : '🟢 Active'}
                 </p>
               </div>
