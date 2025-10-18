@@ -62,3 +62,80 @@ export async function getUserWorkspaceChannels(workspaceId: string) {
   if (error) throw error;
   return data as Channel[];
 }
+
+export async function backfillChannelMemberships(workspaceId: string) {
+  console.log("🔧 [backfillChannelMemberships] Starting for workspace:", workspaceId);
+
+  // 1) Fetch workspace members
+  const { data: workspace, error: wsError } = await supabase
+    .from("workspaces")
+    .select("members")
+    .eq("id", workspaceId)
+    .single();
+
+  if (wsError) {
+    console.error("❌ [backfillChannelMemberships] Error fetching workspace:", wsError);
+    throw wsError;
+  }
+
+  const workspaceMembers = workspace?.members || [];
+  console.log("🔧 [backfillChannelMemberships] Workspace members:", workspaceMembers);
+
+  // 2) Fetch all channels in workspace
+  const { data: channels, error: channelsError } = await supabase
+    .from("channels")
+    .select("*")
+    .eq("workspace_id", workspaceId);
+
+  if (channelsError) {
+    console.error("❌ [backfillChannelMemberships] Error fetching channels:", channelsError);
+    throw channelsError;
+  }
+
+  if (!channels || channels.length === 0) {
+    console.log("🔧 [backfillChannelMemberships] No channels to backfill");
+    return;
+  }
+
+  console.log("🔧 [backfillChannelMemberships] Processing", channels.length, "channels");
+
+  // 3) For each channel, update members if needed
+  for (const channel of channels) {
+    const existingMembers = channel.members || [];
+    const allMembers = Array.from(new Set([...existingMembers, ...workspaceMembers]));
+
+    // Check if there are new members to add
+    const newMembers = allMembers.filter(m => !existingMembers.includes(m));
+
+    if (newMembers.length > 0) {
+      console.log(`🔧 [backfillChannelMemberships] Channel "${channel.name}" - Adding ${newMembers.length} new members`);
+
+      // 4) Update channel.members
+      const { error: updateError } = await supabase
+        .from("channels")
+        .update({ members: allMembers })
+        .eq("id", channel.id);
+
+      if (updateError) {
+        console.error(`❌ [backfillChannelMemberships] Error updating channel ${channel.id}:`, updateError);
+        continue;
+      }
+
+      // 5) Update users.channels for each new member
+      await Promise.all(
+        newMembers.map((memberId) =>
+          supabase.rpc("update_user_channels", {
+            user_id: memberId,
+            channel_id: channel.id,
+          })
+        )
+      );
+
+      console.log(`✅ [backfillChannelMemberships] Channel "${channel.name}" updated successfully`);
+    } else {
+      console.log(`✅ [backfillChannelMemberships] Channel "${channel.name}" already up to date`);
+    }
+  }
+
+  console.log("🔧 [backfillChannelMemberships] Complete");
+}

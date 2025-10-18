@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Message, MessageWithUser } from "@/types/app";
+import { Message, MessageWithUser, User } from "@/types/app";
 
 export async function sendMessage(
   channelId: string,
@@ -79,16 +79,47 @@ export async function getMessages(
   const from = page * pageSize;
   const to = from + pageSize - 1;
 
+  // Step 1: Fetch messages
   const { data: messages, error } = await supabase
     .from("messages")
-    .select(`
-      *,
-      user:users(*)
-    `)
+    .select("*")
     .eq("channel_id", channelId)
     .order("created_at", { ascending: true })
     .range(from, to);
 
   if (error) throw error;
-  return messages as MessageWithUser[];
+  if (!messages || messages.length === 0) return [];
+
+  // Step 2: Collect distinct user IDs
+  const userIds = Array.from(new Set(messages.map(m => m.user_id)));
+
+  // Step 3: Fetch users separately
+  const { data: users, error: usersError } = await supabase
+    .from("users")
+    .select("*")
+    .in("id", userIds);
+
+  if (usersError) throw usersError;
+
+  // Step 4: Build user map and hydrate messages
+  const userMap = (users || []).reduce((acc, user) => {
+    acc[user.id] = user;
+    return acc;
+  }, {} as Record<string, User>);
+
+  return messages.map(m => ({
+    ...m,
+    user: userMap[m.user_id] || {
+      id: m.user_id,
+      name: "Unknown User",
+      email: "",
+      avatar_url: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+      type: null,
+      is_away: false,
+      workspaces: null,
+      channels: null,
+      created_at: null,
+      phone: null,
+    }
+  })) as MessageWithUser[];
 }

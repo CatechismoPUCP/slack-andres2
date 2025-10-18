@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Channel as ChannelType, User } from "@/types/app";
@@ -11,6 +11,8 @@ import { TextEditor } from "@/components/chat/TextEditor";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useChannelMessages } from "@/hooks/use-channel-messages";
 import { VideoChat } from "@/components/VideoChat";
+import { backfillChannelMemberships } from "@/actions/channels";
+import { toast } from "@/hooks/use-toast";
 
 export default function Channel() {
   const { workspaceId, channelId } = useParams<{
@@ -24,6 +26,7 @@ export default function Channel() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const backfillRan = useRef<Record<string, boolean>>({});
 
   const {
     messages,
@@ -73,6 +76,15 @@ export default function Channel() {
       if (channelData) {
         console.log("📡 [Channel] Current channel loaded", { channelId: channelData.id, name: channelData.name });
         setChannel(channelData);
+
+        // Check if current user is a member of this channel
+        if (userData && !channelData.members?.includes(userData.id)) {
+          toast({
+            title: "Limited access",
+            description: "You're not a member of this channel yet. Contact a workspace admin to be added.",
+            variant: "destructive",
+          });
+        }
       }
 
       // Fetch all workspace channels (that the user can see per RLS)
@@ -121,6 +133,14 @@ export default function Channel() {
 
   useEffect(() => {
     loadChannelData();
+
+    // Run backfill once per workspace (dev utility)
+    if (workspaceId && !backfillRan.current[workspaceId]) {
+      backfillRan.current[workspaceId] = true;
+      backfillChannelMemberships(workspaceId).catch((err) => {
+        console.error("❌ [Channel] Backfill failed:", err);
+      });
+    }
   }, [channelId, workspaceId]);
 
   // Real-time channel subscription

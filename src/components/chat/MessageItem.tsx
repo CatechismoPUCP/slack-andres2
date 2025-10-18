@@ -62,14 +62,14 @@ export function MessageItem({
       <div className="group px-6 py-2 hover:bg-accent/50 transition-colors">
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={message.user.avatar_url} />
+            <AvatarImage src={message.user?.avatar_url} />
             <AvatarFallback>
-              {message.user.name?.[0]?.toUpperCase() || "U"}
+              {message.user?.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm">{message.user.name}</span>
+              <span className="font-semibold text-sm">{message.user?.name || "Unknown User"}</span>
               <span className="text-xs text-muted-foreground">{timestamp}</span>
             </div>
             <p className="text-sm text-muted-foreground italic">
@@ -85,14 +85,14 @@ export function MessageItem({
     <div className="group px-6 py-2 hover:bg-accent/50 transition-colors">
       <div className="flex gap-3">
         <Avatar className="h-10 w-10">
-          <AvatarImage src={message.user.avatar_url} />
+          <AvatarImage src={message.user?.avatar_url} />
           <AvatarFallback>
-            {message.user.name?.[0]?.toUpperCase() || "U"}
+            {message.user?.name?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm">{message.user.name}</span>
+            <span className="font-semibold text-sm">{message.user?.name || "Unknown User"}</span>
             {isAdmin && <Badge variant="destructive" className="text-xs">Admin</Badge>}
             {isRegulator && !isAdmin && <Badge variant="secondary" className="text-xs">Regulator</Badge>}
             <span className="text-xs text-muted-foreground">{timestamp}</span>
