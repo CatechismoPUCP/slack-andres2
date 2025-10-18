@@ -43,6 +43,7 @@ export function InfoSection({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     const fetchInviteCode = async () => {
@@ -66,6 +67,13 @@ export function InfoSection({
     setCopied(true);
     toast.success("Invite link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyInviteCode = () => {
+    navigator.clipboard.writeText(inviteCode);
+    setCodeCopied(true);
+    toast.success("Invite code copied to clipboard!");
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   const bgClass = color === 'green' 
@@ -99,18 +107,36 @@ export function InfoSection({
                   <div>
                     <h4 className="font-semibold mb-1">Invite to Workspace</h4>
                     <p className="text-sm text-muted-foreground">
-                      Share this link with people you want to invite
+                      Share the code or link with people you want to invite
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      readOnly
-                      value={`${window.location.origin}/join/${inviteCode}`}
-                      className="flex-1 px-3 py-2 text-sm border rounded-md bg-muted"
-                    />
-                    <Button size="sm" onClick={copyInviteLink}>
-                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Invite Code</label>
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        value={inviteCode}
+                        className="flex-1 px-3 py-2 text-sm border rounded-md bg-muted font-mono"
+                      />
+                      <Button size="sm" onClick={copyInviteCode}>
+                        {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium">Invite Link</label>
+                    <div className="flex gap-2">
+                      <input
+                        readOnly
+                        value={`${window.location.origin}/join/${inviteCode}`}
+                        className="flex-1 px-3 py-2 text-sm border rounded-md bg-muted"
+                      />
+                      <Button size="sm" onClick={copyInviteLink}>
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </PopoverContent>

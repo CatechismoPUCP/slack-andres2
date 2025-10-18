@@ -27,6 +27,7 @@ export function InviteToWorkspaceDialog({
   password,
 }: InviteToWorkspaceDialogProps) {
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,16 @@ export function InviteToWorkspaceDialog({
       description: "Share this link with others to invite them",
     });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(inviteCode);
+    setCodeCopied(true);
+    toast({
+      title: "Code copied!",
+      description: "Share this code with others to invite them",
+    });
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   const handleInviteUser = async (userId: string) => {
@@ -99,6 +110,20 @@ export function InviteToWorkspaceDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Invite Code Section */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Invite Code</label>
+            <div className="flex gap-2">
+              <Input value={inviteCode} readOnly className="font-mono" />
+              <Button size="icon" variant="outline" onClick={handleCopyCode}>
+                {codeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Users can paste this code in "Join workspace with code"
+            </p>
+          </div>
+
           {/* Invite Link Section */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Invite Link</label>

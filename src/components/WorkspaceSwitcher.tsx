@@ -7,8 +7,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Plus, Check } from "lucide-react";
+import { ChevronDown, Plus, Check, KeyRound } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { JoinByCodeDialog } from "@/components/JoinByCodeDialog";
 import type { Workspace } from "@/types/app";
 
 interface WorkspaceSwitcherProps {
@@ -19,6 +20,7 @@ export function WorkspaceSwitcher({ currentWorkspaceId }: WorkspaceSwitcherProps
   const navigate = useNavigate();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
 
   useEffect(() => {
     loadWorkspaces();
@@ -109,8 +111,17 @@ export function WorkspaceSwitcher({ currentWorkspaceId }: WorkspaceSwitcherProps
             <Plus className="mr-2 h-4 w-4" />
             Create New Workspace
           </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => setJoinDialogOpen(true)}
+          >
+            <KeyRound className="mr-2 h-4 w-4" />
+            Join with Code
+          </Button>
         </div>
       </PopoverContent>
+      <JoinByCodeDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
     </Popover>
   );
 }

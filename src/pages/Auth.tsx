@@ -5,22 +5,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Github, Mail } from "lucide-react";
+import { Github, Mail, KeyRound } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { JoinByCodeDialog } from "@/components/JoinByCodeDialog";
+import { ensureUserRecord } from "@/lib/ensure-user-record";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          await ensureUserRecord();
+          
+          // Check for pending invite code
+          const pendingInvite = sessionStorage.getItem('pendingInviteCode');
+          if (pendingInvite) {
+            navigate(`/join/${pendingInvite}`);
+          } else {
+            navigate("/");
+          }
+        }
+      }
+    );
+
+    // Check for existing session
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check for pending invite code
+        await ensureUserRecord();
+        
         const pendingInvite = sessionStorage.getItem('pendingInviteCode');
         if (pendingInvite) {
           navigate(`/join/${pendingInvite}`);
@@ -30,6 +52,8 @@ export default function Auth() {
       }
     };
     checkSession();
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
@@ -56,6 +80,8 @@ export default function Auth() {
           password,
         });
         if (error) throw error;
+        
+        await ensureUserRecord();
         
         // Check for pending invite code
         const pendingInvite = sessionStorage.getItem('pendingInviteCode');
@@ -191,17 +217,38 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-sm space-y-2">
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary hover:text-accent transition-smooth font-medium"
+              className="text-primary hover:text-accent transition-smooth font-medium block w-full"
             >
               {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
             </button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setJoinDialogOpen(true)}
+              className="w-full gap-2"
+            >
+              <KeyRound className="h-4 w-4" />
+              Join workspace with code
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      <JoinByCodeDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
     </div>
   );
 }
