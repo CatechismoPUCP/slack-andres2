@@ -175,6 +175,48 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          channel_id: string | null
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          channel_id?: string | null
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          channel_id?: string | null
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string
@@ -281,6 +323,15 @@ export type Database = {
         Args: { new_workspace: string; user_id: string }
         Returns: undefined
       }
+      has_role: {
+        Args: {
+          _channel_id?: string
+          _role?: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+          _workspace_id: string
+        }
+        Returns: boolean
+      }
       update_channel_members: {
         Args: { channel_id: string; new_member: string }
         Returns: undefined
@@ -299,7 +350,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "workspace_admin" | "channel_regulator" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -426,6 +477,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["workspace_admin", "channel_regulator", "member"],
+    },
   },
 } as const
