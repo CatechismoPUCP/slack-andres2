@@ -137,9 +137,14 @@ export default function Channel() {
     // Run backfill once per workspace (dev utility)
     if (workspaceId && !backfillRan.current[workspaceId]) {
       backfillRan.current[workspaceId] = true;
-      backfillChannelMemberships(workspaceId).catch((err) => {
-        console.error("❌ [Channel] Backfill failed:", err);
-      });
+      backfillChannelMemberships(workspaceId)
+        .then(() => {
+          console.log("✅ [Channel] Backfill complete, reloading channel data");
+          loadChannelData(); // Refresh to get updated members
+        })
+        .catch((err) => {
+          console.error("❌ [Channel] Backfill failed:", err);
+        });
     }
   }, [channelId, workspaceId]);
 
@@ -175,6 +180,32 @@ export default function Channel() {
       supabase.removeChannel(channelSubscription);
     };
   }, [workspaceId]);
+
+  // Real-time subscription for channel updates (member count changes)
+  useEffect(() => {
+    if (!channelId) return;
+
+    const channelUpdateSubscription = supabase
+      .channel(`channel-updates-${channelId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'channels',
+          filter: `id=eq.${channelId}`
+        },
+        (payload) => {
+          console.log("🔴 [Channel] REALTIME: Channel updated", payload.new);
+          setChannel(payload.new as ChannelType);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channelUpdateSubscription);
+    };
+  }, [channelId]);
 
   const handleSendMessage = (content: string, fileUrl?: string) => {
     sendMessage({ content, fileUrl: fileUrl || null });
