@@ -20,6 +20,7 @@ export default function Channel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const isInCall = searchParams.get("call") === "true";
   const [channel, setChannel] = useState<ChannelType | null>(null);
+  const [allChannels, setAllChannels] = useState<ChannelType[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,6 +70,17 @@ export default function Channel() {
       if (channelData) {
         setChannel(channelData);
       }
+
+      // Fetch all workspace channels
+      const { data: channelsData } = await supabase
+        .from("channels")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: true });
+
+      if (channelsData) {
+        setAllChannels(channelsData);
+      }
     } catch (error) {
       console.error("Error loading channel data:", error);
     } finally {
@@ -79,6 +91,31 @@ export default function Channel() {
   useEffect(() => {
     loadChannelData();
   }, [channelId, workspaceId]);
+
+  // Real-time channel subscription
+  useEffect(() => {
+    if (!workspaceId) return;
+
+    const channelSubscription = supabase
+      .channel('workspace-channels')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'channels',
+          filter: `workspace_id=eq.${workspaceId}`
+        },
+        (payload) => {
+          setAllChannels(prev => [...prev, payload.new as ChannelType]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channelSubscription);
+    };
+  }, [workspaceId]);
 
   const handleSendMessage = (content: string, fileUrl?: string) => {
     sendMessage({ content, fileUrl: fileUrl || null });
@@ -101,7 +138,7 @@ export default function Channel() {
       <Sidebar workspaceId={workspaceId!} />
       <InfoSection
         workspaceId={workspaceId!}
-        channels={[channel]}
+        channels={allChannels}
         members={[]}
         currentUserId={currentUser.id}
       />

@@ -1,4 +1,4 @@
-import { Home, MessageSquare, LogOut, Settings } from 'lucide-react';
+import { Home, MessageSquare, LogOut, Settings, UserPlus } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,11 +9,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { PreferencesDialog } from './PreferencesDialog';
+import { JoinByCodeDialog } from './JoinByCodeDialog';
 
 export function Sidebar({ workspaceId }: { workspaceId: string }) {
   const [user, setUser] = useState<any>(null);
   const [isAway, setIsAway] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,13 +70,17 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
 
         {/* Navigation */}
         <div className="space-y-1">
-          <Button variant="ghost" className="w-full justify-start gap-2" size="sm">
+          <Button variant="ghost" className="w-full justify-start gap-2" size="sm" onClick={() => navigate(`/workspace/${workspaceId}`)}>
             <Home className="h-4 w-4" />
             <span>Home</span>
           </Button>
-          <Button variant="ghost" className="w-full justify-start gap-2" size="sm">
+          <Button variant="ghost" className="w-full justify-start gap-2" size="sm" onClick={() => navigate(`/workspace/${workspaceId}/dms`)}>
             <MessageSquare className="h-4 w-4" />
             <span>DMs</span>
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-2" size="sm" onClick={() => setJoinDialogOpen(true)}>
+            <UserPlus className="h-4 w-4" />
+            <span>Join Workspace</span>
           </Button>
         </div>
       </div>
@@ -154,6 +160,7 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
       </div>
 
       <PreferencesDialog open={preferencesOpen} onOpenChange={setPreferencesOpen} />
+      <JoinByCodeDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
     </div>
   );
 }
