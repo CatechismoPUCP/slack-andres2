@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { MoreVertical, Pencil, Trash } from "lucide-react";
+import { MoreVertical, Pencil, Trash, FileText } from "lucide-react";
 import { MessageWithUser } from "@/types/app";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,8 @@ interface MessageItemProps {
   currentUserId: string;
   onUpdate: (messageId: string, content: string) => void;
   onDelete: (messageId: string) => void;
+  isAdmin?: boolean;
+  isRegulator?: boolean;
 }
 
 export function MessageItem({
@@ -24,12 +27,23 @@ export function MessageItem({
   currentUserId,
   onUpdate,
   onDelete,
+  isAdmin = false,
+  isRegulator = false,
 }: MessageItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content || "");
 
   const isOwnMessage = message.user_id === currentUserId;
+  const canDelete = isOwnMessage || isAdmin || isRegulator;
   const timestamp = format(new Date(message.created_at), "h:mm a");
+
+  const isImageFile = (url: string) => {
+    return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+  };
+
+  const isPdfFile = (url: string) => {
+    return /\.pdf$/i.test(url);
+  };
 
   const handleSaveEdit = () => {
     if (editContent.trim()) {
@@ -72,8 +86,10 @@ export function MessageItem({
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm">{message.user.name}</span>
+            {isAdmin && <Badge variant="destructive" className="text-xs">Admin</Badge>}
+            {isRegulator && !isAdmin && <Badge variant="secondary" className="text-xs">Regulator</Badge>}
             <span className="text-xs text-muted-foreground">{timestamp}</span>
             {message.updated_at !== message.created_at && (
               <span className="text-xs text-muted-foreground">(edited)</span>
@@ -105,22 +121,48 @@ export function MessageItem({
             </div>
           ) : (
             <>
-              <p className="text-sm mt-1 whitespace-pre-wrap break-words">
-                {message.content}
-              </p>
+              <div 
+                className="text-sm mt-1 whitespace-pre-wrap break-words prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: message.content || "" }}
+              />
+              
               {message.file_url && (
                 <div className="mt-2">
-                  <img
-                    src={message.file_url}
-                    alt="Attachment"
-                    className="max-w-md rounded-lg border"
-                  />
+                  {isImageFile(message.file_url) ? (
+                    <a href={message.file_url} target="_blank" rel="noopener noreferrer">
+                      <img 
+                        src={message.file_url} 
+                        alt="Attachment" 
+                        className="max-w-md rounded-md border border-border"
+                      />
+                    </a>
+                  ) : isPdfFile(message.file_url) ? (
+                    <a 
+                      href={message.file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View PDF
+                    </a>
+                  ) : (
+                    <a 
+                      href={message.file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Download File
+                    </a>
+                  )}
                 </div>
               )}
             </>
           )}
         </div>
-        {isOwnMessage && !isEditing && (
+        {!isEditing && (canDelete || isOwnMessage) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -132,17 +174,21 @@ export function MessageItem({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDelete(message.id)}
-                className="text-destructive"
-              >
-                <Trash className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
+              {isOwnMessage && (
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {canDelete && (
+                <DropdownMenuItem
+                  onClick={() => onDelete(message.id)}
+                  className="text-destructive"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

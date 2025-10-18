@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Channel as ChannelType, User } from "@/types/app";
 import { Sidebar } from "@/components/Sidebar";
@@ -7,7 +7,7 @@ import { InfoSection } from "@/components/InfoSection";
 import { MainContent } from "@/components/MainContent";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { MessageList } from "@/components/chat/MessageList";
-import { MessageInput } from "@/components/chat/MessageInput";
+import { TextEditor } from "@/components/chat/TextEditor";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useChannelMessages } from "@/hooks/use-channel-messages";
 
@@ -16,6 +16,8 @@ export default function Channel() {
     workspaceId: string;
     channelId: string;
   }>();
+  const [searchParams] = useSearchParams();
+  const isInCall = searchParams.get("call") === "true";
   const [channel, setChannel] = useState<ChannelType | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,9 @@ export default function Channel() {
     updateMessage,
     deleteMessage,
     isSending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   } = useChannelMessages(channelId || "", workspaceId || "");
 
   useEffect(() => {
@@ -105,15 +110,35 @@ export default function Channel() {
             channel={channel}
             memberCount={channel.members?.length || 0}
           />
-          <MessageList
-            messages={messages}
-            currentUserId={currentUser.id}
-            onUpdateMessage={(messageId, content) =>
-              updateMessage({ messageId, content })
-            }
-            onDeleteMessage={(messageId) => deleteMessage(messageId)}
-          />
-          <MessageInput onSend={handleSendMessage} isSending={isSending} />
+          {isInCall ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <p className="text-lg font-semibold">Video call feature</p>
+                <p className="text-sm">Coming soon...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <MessageList
+                messages={messages}
+                currentUserId={currentUser.id}
+                channelName={channel.name}
+                channelCreatedAt={channel.created_at}
+                onUpdateMessage={(messageId, content) =>
+                  updateMessage({ messageId, content })
+                }
+                onDeleteMessage={(messageId) => deleteMessage(messageId)}
+                hasNextPage={hasNextPage}
+                fetchNextPage={fetchNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+              />
+              <TextEditor
+                onSend={handleSendMessage}
+                isSending={isSending}
+                channelName={channel.name}
+              />
+            </>
+          )}
         </div>
       </MainContent>
     </div>

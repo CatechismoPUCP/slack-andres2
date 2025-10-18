@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageWithUser } from "@/types/app";
 import { getMessages, sendMessage, updateMessage, deleteMessage } from "@/actions/messages";
@@ -9,12 +9,26 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
   const queryClient = useQueryClient();
   const [optimisticMessages, setOptimisticMessages] = useState<MessageWithUser[]>([]);
 
-  // Initial fetch
-  const { data: initialMessages = [], isLoading } = useQuery({
+  // Fetch messages with infinite scroll pagination
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["messages", channelId],
-    queryFn: () => getMessages(channelId),
+    queryFn: ({ pageParam = 0 }) => getMessages(channelId, pageParam, 50),
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < 50) return undefined;
+      return allPages.length;
+    },
     enabled: !!channelId,
+    initialPageParam: 0,
   });
+
+  // Flatten all pages into a single array
+  const initialMessages = data?.pages.flat() ?? [];
 
   // Realtime subscription
   useEffect(() => {
@@ -141,5 +155,8 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
     updateMessage: updateMutation.mutate,
     deleteMessage: deleteMutation.mutate,
     isSending: sendMutation.isPending,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   };
 }
