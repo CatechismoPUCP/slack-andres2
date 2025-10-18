@@ -42,6 +42,8 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
   useEffect(() => {
     if (!currentUserId || !otherUserId) return;
 
+    console.log('[realtime] subscribing to direct messages:', userOne, userTwo);
+
     const channel = supabase
       .channel(`dm:${userOne}:${userTwo}:messages`)
       .on(
@@ -53,12 +55,13 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
           filter: `and(user_one.eq.${userOne},user_two.eq.${userTwo})`,
         },
         async (payload) => {
+          console.log('[realtime][direct-messages][INSERT]', payload);
           const senderId = (payload.new as any).user;
           const { data: user } = await supabase
             .from("users")
             .select("*")
             .eq("id", senderId)
-            .single();
+            .maybeSingle();
 
           if (user) {
             const newMessage = { ...payload.new, senderUser: user } as DirectMessageWithUser;
@@ -77,6 +80,8 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
                 };
               }
             );
+          } else {
+            console.log('[realtime][direct-messages] User not found for INSERT:', senderId);
           }
         }
       )
@@ -89,12 +94,13 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
           filter: `and(user_one.eq.${userOne},user_two.eq.${userTwo})`,
         },
         async (payload) => {
+          console.log('[realtime][direct-messages][UPDATE]', payload);
           const senderId = (payload.new as any).user;
           const { data: user } = await supabase
             .from("users")
             .select("*")
             .eq("id", senderId)
-            .single();
+            .maybeSingle();
 
           if (user) {
             const updatedMessage = { ...payload.new, senderUser: user } as DirectMessageWithUser;
@@ -116,6 +122,8 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
                 };
               }
             );
+          } else {
+            console.log('[realtime][direct-messages] User not found for UPDATE:', senderId);
           }
         }
       )
@@ -128,6 +136,7 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
           filter: `and(user_one.eq.${userOne},user_two.eq.${userTwo})`,
         },
         (payload) => {
+          console.log('[realtime][direct-messages][DELETE]', payload);
           const deletedId = (payload.old as any).id;
           
           queryClient.setQueryData(
@@ -147,9 +156,12 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[realtime][direct-messages][status]', status);
+      });
 
     return () => {
+      console.log('[realtime] unsubscribing from direct messages:', userOne, userTwo);
       supabase.removeChannel(channel);
     };
   }, [currentUserId, otherUserId, userOne, userTwo, queryClient]);
@@ -158,6 +170,41 @@ export function useDirectMessages(currentUserId: string, otherUserId: string) {
   const sendMutation = useMutation({
     mutationFn: ({ content, fileUrl }: { content: string | null; fileUrl?: string | null }) =>
       sendDirectMessage(otherUserId, content, fileUrl),
+    onSuccess: async (data) => {
+      // Optimistic UI: immediately add the message to cache
+      const { data: user } = await supabase.auth.getUser();
+      if (user.user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.user.id)
+          .maybeSingle();
+        
+        if (userData) {
+          const newMessage = { ...data, senderUser: userData } as DirectMessageWithUser;
+          queryClient.setQueryData(
+            ["direct-messages", userOne, userTwo],
+            (oldData: any) => {
+              if (!oldData) return { pages: [[newMessage]], pageParams: [0] };
+              
+              const newPages = [...oldData.pages];
+              const lastPage = [...newPages[newPages.length - 1]];
+              
+              // Only add if not already there (avoid duplicates from realtime)
+              if (!lastPage.some(msg => msg.id === newMessage.id)) {
+                lastPage.push(newMessage);
+                newPages[newPages.length - 1] = lastPage;
+              }
+              
+              return {
+                ...oldData,
+                pages: newPages,
+              };
+            }
+          );
+        }
+      }
+    },
     onError: (error) => {
       toast({
         title: "Error",

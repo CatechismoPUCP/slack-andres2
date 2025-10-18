@@ -34,6 +34,8 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
   useEffect(() => {
     if (!channelId) return;
 
+    console.log('[realtime] subscribing to channel messages:', channelId);
+
     const channel = supabase
       .channel(`channel:${channelId}:messages`)
       .on(
@@ -45,11 +47,12 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
           filter: `channel_id=eq.${channelId}`,
         },
         async (payload) => {
+          console.log('[realtime][messages][INSERT]', payload);
           const { data: user } = await supabase
             .from("users")
             .select("*")
             .eq("id", (payload.new as any).user_id)
-            .single();
+            .maybeSingle();
 
           if (user) {
             const newMessage = { ...payload.new, user } as MessageWithUser;
@@ -68,6 +71,8 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
                 };
               }
             );
+          } else {
+            console.log('[realtime][messages] User not found for INSERT:', (payload.new as any).user_id);
           }
         }
       )
@@ -80,11 +85,12 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
           filter: `channel_id=eq.${channelId}`,
         },
         async (payload) => {
+          console.log('[realtime][messages][UPDATE]', payload);
           const { data: user } = await supabase
             .from("users")
             .select("*")
             .eq("id", (payload.new as any).user_id)
-            .single();
+            .maybeSingle();
 
           if (user) {
             const updatedMessage = { ...payload.new, user } as MessageWithUser;
@@ -106,6 +112,8 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
                 };
               }
             );
+          } else {
+            console.log('[realtime][messages] User not found for UPDATE:', (payload.new as any).user_id);
           }
         }
       )
@@ -118,6 +126,7 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
           filter: `channel_id=eq.${channelId}`,
         },
         (payload) => {
+          console.log('[realtime][messages][DELETE]', payload);
           const deletedId = (payload.old as any).id;
           
           queryClient.setQueryData(
@@ -137,9 +146,12 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[realtime][messages][status]', status);
+      });
 
     return () => {
+      console.log('[realtime] unsubscribing from channel messages:', channelId);
       supabase.removeChannel(channel);
     };
   }, [channelId, queryClient]);
@@ -148,6 +160,41 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
   const sendMutation = useMutation({
     mutationFn: ({ content, fileUrl }: { content: string | null; fileUrl?: string | null }) =>
       sendMessage(channelId, workspaceId, content, fileUrl),
+    onSuccess: async (data) => {
+      // Optimistic UI: immediately add the message to cache
+      const { data: user } = await supabase.auth.getUser();
+      if (user.user) {
+        const { data: userData } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.user.id)
+          .maybeSingle();
+        
+        if (userData) {
+          const newMessage = { ...data, user: userData } as MessageWithUser;
+          queryClient.setQueryData(
+            ["messages", channelId],
+            (oldData: any) => {
+              if (!oldData) return { pages: [[newMessage]], pageParams: [0] };
+              
+              const newPages = [...oldData.pages];
+              const lastPage = [...newPages[newPages.length - 1]];
+              
+              // Only add if not already there (avoid duplicates from realtime)
+              if (!lastPage.some(msg => msg.id === newMessage.id)) {
+                lastPage.push(newMessage);
+                newPages[newPages.length - 1] = lastPage;
+              }
+              
+              return {
+                ...oldData,
+                pages: newPages,
+              };
+            }
+          );
+        }
+      }
+    },
     onError: (error) => {
       toast({
         title: "Error",
