@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
 import { InfoSection } from "@/components/InfoSection";
@@ -10,10 +10,13 @@ import { TextEditor } from "@/components/chat/TextEditor";
 import { useDirectMessages } from "@/hooks/use-direct-messages";
 import { User, Workspace, Channel } from "@/types/app";
 import { Loader2 } from "lucide-react";
+import { VideoChat } from "@/components/VideoChat";
 
 export default function DirectMessage() {
   const { workspaceId, recipientId } = useParams<{ workspaceId: string; recipientId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isInCall = searchParams.get("call") === "true";
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [recipientUser, setRecipientUser] = useState<User | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -170,30 +173,45 @@ export default function DirectMessage() {
       />
 
       <MainContent>
-        <ChatHeader 
-          recipientUser={recipientUser}
-          isDM={true}
-        />
-        
-        <MessageList
-          messages={transformedMessages}
-          currentUserId={currentUser.id}
-          onUpdateMessage={handleUpdateMessage}
-          onDeleteMessage={handleDeleteMessage}
-          channelName={recipientUser.name || recipientUser.email}
-          channelCreatedAt={recipientUser.created_at || new Date().toISOString()}
-          channelOwnerId=""
-          isDM={true}
-          hasNextPage={hasNextPage}
-          fetchNextPage={fetchNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-        />
+        <div className="flex flex-col h-screen">
+          <ChatHeader 
+            recipientUser={recipientUser}
+            isDM={true}
+          />
+          
+          {isInCall ? (
+            <VideoChat
+              roomName={`dm-${[currentUser.id, recipientId].sort().join('-')}`}
+              workspaceId={workspaceId!}
+              onDisconnect={() => {
+                searchParams.delete("call");
+                setSearchParams(searchParams);
+              }}
+            />
+          ) : (
+            <>
+              <MessageList
+                messages={transformedMessages}
+                currentUserId={currentUser.id}
+                onUpdateMessage={handleUpdateMessage}
+                onDeleteMessage={handleDeleteMessage}
+                channelName={recipientUser.name || recipientUser.email}
+                channelCreatedAt={recipientUser.created_at || new Date().toISOString()}
+                channelOwnerId=""
+                isDM={true}
+                hasNextPage={hasNextPage}
+                fetchNextPage={fetchNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+              />
 
-        <TextEditor
-          onSend={handleSendMessage}
-          isSending={isSending}
-          channelName={recipientUser.name || recipientUser.email}
-        />
+              <TextEditor
+                onSend={handleSendMessage}
+                isSending={isSending}
+                channelName={recipientUser.name || recipientUser.email}
+              />
+            </>
+          )}
+        </div>
       </MainContent>
     </div>
   );

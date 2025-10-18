@@ -10,13 +10,14 @@ import { MessageList } from "@/components/chat/MessageList";
 import { TextEditor } from "@/components/chat/TextEditor";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useChannelMessages } from "@/hooks/use-channel-messages";
+import { VideoChat } from "@/components/VideoChat";
 
 export default function Channel() {
   const { workspaceId, channelId } = useParams<{
     workspaceId: string;
     channelId: string;
   }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isInCall = searchParams.get("call") === "true";
   const [channel, setChannel] = useState<ChannelType | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -34,48 +35,48 @@ export default function Channel() {
     isFetchingNextPage,
   } = useChannelMessages(channelId || "", workspaceId || "");
 
-  useEffect(() => {
-    async function loadChannelData() {
-      if (!channelId || !workspaceId) return;
+  const loadChannelData = async () => {
+    if (!channelId || !workspaceId) return;
 
-      try {
-        // Get current user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          window.location.href = "/auth";
-          return;
-        }
-
-        // Get user data
-        const { data: userData } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (userData) {
-          setCurrentUser(userData);
-        }
-
-        // Get channel data
-        const { data: channelData } = await supabase
-          .from("channels")
-          .select("*")
-          .eq("id", channelId)
-          .single();
-
-        if (channelData) {
-          setChannel(channelData);
-        }
-      } catch (error) {
-        console.error("Error loading channel data:", error);
-      } finally {
-        setLoading(false);
+    try {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/auth";
+        return;
       }
-    }
 
+      // Get user data
+      const { data: userData } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (userData) {
+        setCurrentUser(userData);
+      }
+
+      // Get channel data
+      const { data: channelData } = await supabase
+        .from("channels")
+        .select("*")
+        .eq("id", channelId)
+        .single();
+
+      if (channelData) {
+        setChannel(channelData);
+      }
+    } catch (error) {
+      console.error("Error loading channel data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadChannelData();
   }, [channelId, workspaceId]);
 
@@ -109,14 +110,20 @@ export default function Channel() {
           <ChatHeader
             channel={channel}
             memberCount={channel.members?.length || 0}
+            workspaceId={workspaceId}
+            currentUserId={currentUser.id}
+            onMemberUpdate={loadChannelData}
           />
           {isInCall ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <p className="text-lg font-semibold">Video call feature</p>
-                <p className="text-sm">Coming soon...</p>
-              </div>
-            </div>
+            <VideoChat
+              roomName={`channel-${channelId}`}
+              channelId={channelId}
+              workspaceId={workspaceId!}
+              onDisconnect={() => {
+                searchParams.delete("call");
+                setSearchParams(searchParams);
+              }}
+            />
           ) : (
             <>
               <MessageList

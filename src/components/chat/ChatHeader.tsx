@@ -5,15 +5,27 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSearchParams } from "react-router-dom";
+import { SearchBar } from "@/components/SearchBar";
 
 interface ChatHeaderProps {
   channel?: Channel;
   memberCount?: number;
   recipientUser?: User;
   isDM?: boolean;
+  workspaceId?: string;
+  currentUserId?: string;
+  onMemberUpdate?: () => void;
 }
 
-export function ChatHeader({ channel, memberCount, recipientUser, isDM }: ChatHeaderProps) {
+export function ChatHeader({ 
+  channel, 
+  memberCount, 
+  recipientUser, 
+  isDM,
+  workspaceId,
+  currentUserId,
+  onMemberUpdate
+}: ChatHeaderProps) {
   const { color } = useColorPreferences();
   const [searchParams, setSearchParams] = useSearchParams();
   const isInCall = searchParams.get("call") === "true";
@@ -86,6 +98,16 @@ export function ChatHeader({ channel, memberCount, recipientUser, isDM }: ChatHe
           <Users className="h-4 w-4" />
           <span>{memberCount} members</span>
         </div>
+        {!isDM && workspaceId && currentUserId && channel && (
+          <SearchBar
+            workspaceId={workspaceId}
+            channelId={channel.id}
+            channelMembers={channel.members || []}
+            channelRegulators={channel.regulators || []}
+            currentUserId={currentUserId}
+            onMemberAdded={onMemberUpdate}
+          />
+        )}
         <Button
           variant={isInCall ? "default" : "outline"}
           size="icon"
