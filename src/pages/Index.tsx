@@ -26,11 +26,17 @@ const Index = () => {
         }
 
         // Fetch user data
-        const { data: userData } = await supabase
+        const { data: userData, error } = await supabase
           .from("users")
           .select("*")
           .eq("id", session.user.id)
           .single();
+
+        if (error) {
+          console.error("Error fetching user:", error);
+          navigate("/create-workspace");
+          return;
+        }
 
         if (userData?.workspaces && userData.workspaces.length > 0) {
           // Redirect to first workspace
@@ -39,6 +45,9 @@ const Index = () => {
           // No workspaces, redirect to create one
           navigate("/create-workspace");
         }
+      } catch (error) {
+        console.error("Error in checkAuth:", error);
+        navigate("/auth");
       } finally {
         setLoading(false);
       }
