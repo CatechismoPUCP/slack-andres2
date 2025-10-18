@@ -124,6 +124,8 @@ export default function Channel() {
                 currentUserId={currentUser.id}
                 channelName={channel.name}
                 channelCreatedAt={channel.created_at}
+                channelOwnerId={channel.user_id}
+                channelRegulators={channel.regulators || []}
                 onUpdateMessage={(messageId, content) =>
                   updateMessage({ messageId, content })
                 }

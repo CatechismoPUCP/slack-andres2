@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 
 export function useChannelMessages(channelId: string, workspaceId: string) {
   const queryClient = useQueryClient();
-  const [optimisticMessages, setOptimisticMessages] = useState<MessageWithUser[]>([]);
+  
 
   // Fetch messages with infinite scroll pagination
   const {
@@ -45,7 +45,6 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
           filter: `channel_id=eq.${channelId}`,
         },
         async (payload) => {
-          // Fetch user data for the new message
           const { data: user } = await supabase
             .from("users")
             .select("*")
@@ -54,9 +53,20 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
 
           if (user) {
             const newMessage = { ...payload.new, user } as MessageWithUser;
-            queryClient.setQueryData<MessageWithUser[]>(
+            
+            queryClient.setQueryData(
               ["messages", channelId],
-              (old = []) => [...old, newMessage]
+              (oldData: any) => {
+                if (!oldData) return { pages: [[newMessage]], pageParams: [0] };
+                
+                const newPages = [...oldData.pages];
+                newPages[newPages.length - 1] = [...newPages[newPages.length - 1], newMessage];
+                
+                return {
+                  ...oldData,
+                  pages: newPages,
+                };
+              }
             );
           }
         }
@@ -78,12 +88,23 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
 
           if (user) {
             const updatedMessage = { ...payload.new, user } as MessageWithUser;
-            queryClient.setQueryData<MessageWithUser[]>(
+            
+            queryClient.setQueryData(
               ["messages", channelId],
-              (old = []) =>
-                old.map((msg) =>
-                  msg.id === updatedMessage.id ? updatedMessage : msg
-                )
+              (oldData: any) => {
+                if (!oldData) return oldData;
+                
+                const newPages = oldData.pages.map((page: MessageWithUser[]) =>
+                  page.map((msg) =>
+                    msg.id === updatedMessage.id ? updatedMessage : msg
+                  )
+                );
+                
+                return {
+                  ...oldData,
+                  pages: newPages,
+                };
+              }
             );
           }
         }
@@ -97,9 +118,22 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
           filter: `channel_id=eq.${channelId}`,
         },
         (payload) => {
-          queryClient.setQueryData<MessageWithUser[]>(
+          const deletedId = (payload.old as any).id;
+          
+          queryClient.setQueryData(
             ["messages", channelId],
-            (old = []) => old.filter((msg) => msg.id !== (payload.old as any).id)
+            (oldData: any) => {
+              if (!oldData) return oldData;
+              
+              const newPages = oldData.pages.map((page: MessageWithUser[]) =>
+                page.filter((msg) => msg.id !== deletedId)
+              );
+              
+              return {
+                ...oldData,
+                pages: newPages,
+              };
+            }
           );
         }
       )
@@ -146,7 +180,7 @@ export function useChannelMessages(channelId: string, workspaceId: string) {
     },
   });
 
-  const messages = [...initialMessages, ...optimisticMessages];
+  const messages = initialMessages;
 
   return {
     messages,

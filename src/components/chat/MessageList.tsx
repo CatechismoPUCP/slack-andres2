@@ -13,6 +13,8 @@ interface MessageListProps {
   onDeleteMessage: (messageId: string) => void;
   channelName: string;
   channelCreatedAt: string;
+  channelOwnerId: string;
+  channelRegulators?: string[];
   hasNextPage?: boolean;
   fetchNextPage?: () => void;
   isFetchingNextPage?: boolean;
@@ -25,6 +27,8 @@ export function MessageList({
   onDeleteMessage,
   channelName,
   channelCreatedAt,
+  channelOwnerId,
+  channelRegulators = [],
   hasNextPage,
   fetchNextPage,
   isFetchingNextPage,
@@ -76,15 +80,22 @@ export function MessageList({
           />
         )}
 
-        {messages.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            currentUserId={currentUserId}
-            onUpdate={onUpdateMessage}
-            onDelete={onDeleteMessage}
-          />
-        ))}
+        {messages.map((message) => {
+          const isAdmin = message.user_id === channelOwnerId;
+          const isRegulator = channelRegulators.includes(message.user_id);
+          
+          return (
+            <MessageItem
+              key={message.id}
+              message={message}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+              isRegulator={isRegulator}
+              onUpdate={onUpdateMessage}
+              onDelete={onDeleteMessage}
+            />
+          );
+        })}
 
         <div ref={bottomRef} />
       </div>

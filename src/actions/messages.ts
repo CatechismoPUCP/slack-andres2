@@ -86,9 +86,9 @@ export async function getMessages(
       user:users(*)
     `)
     .eq("channel_id", channelId)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: true })
     .range(from, to);
 
   if (error) throw error;
-  return (messages as any[]).reverse() as MessageWithUser[];
+  return messages as MessageWithUser[];
 }
