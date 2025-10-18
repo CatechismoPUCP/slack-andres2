@@ -52,7 +52,7 @@ export function Sidebar({ workspaceId }: { workspaceId: string }) {
   if (!user) return null;
 
   return (
-    <div className="fixed left-0 top-0 h-full w-[280px] lg:w-[420px] bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className="h-screen w-[280px] lg:w-[420px] bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
       {/* Workspace Section */}
       <div className="p-4">
         <div className="flex items-center gap-3 mb-4">

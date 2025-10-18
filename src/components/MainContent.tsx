@@ -16,7 +16,7 @@ export function MainContent({ children }: MainContentProps) {
     : 'bg-background';
 
   return (
-    <div className={cn('min-h-screen ml-[280px] lg:ml-[420px]', bgClass)}>
+    <div className={cn('flex-1 min-h-screen', bgClass)}>
       {children}
     </div>
   );

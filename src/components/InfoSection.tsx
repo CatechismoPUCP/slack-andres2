@@ -80,8 +80,7 @@ export function InfoSection({
     <>
       <div 
         className={cn(
-          "fixed left-[280px] lg:left-[420px] h-screen border-r border-border",
-          "w-52 md:w-64 lg:w-[350px]",
+          "h-screen border-r border-border w-52 md:w-64 lg:w-[350px] shrink-0",
           bgClass
         )}
       >

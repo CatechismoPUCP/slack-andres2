@@ -66,9 +66,9 @@ export default function Workspace() {
 
   if (loading) {
     return (
-      <>
+      <div className="flex min-h-screen w-full">
         <Sidebar workspaceId={workspaceId!} />
-        <div className="fixed left-[280px] lg:left-[420px] w-52 md:w-64 lg:w-[350px] h-screen border-r border-border bg-background p-4">
+        <div className="h-screen w-52 md:w-64 lg:w-[350px] border-r border-border bg-background p-4 shrink-0">
           <Skeleton className="h-6 w-32 mb-4" />
           <Skeleton className="h-8 w-full mb-2" />
           <Skeleton className="h-8 w-full mb-2" />
@@ -79,25 +79,25 @@ export default function Workspace() {
             <p className="text-muted-foreground">Loading workspace...</p>
           </div>
         </MainContent>
-      </>
+      </div>
     );
   }
 
   if (!workspace || !currentUser) {
     return (
-      <>
+      <div className="flex min-h-screen w-full">
         <Sidebar workspaceId={workspaceId!} />
         <MainContent>
           <div className="flex items-center justify-center min-h-screen">
             <p className="text-muted-foreground">Workspace not found</p>
           </div>
         </MainContent>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="flex min-h-screen w-full">
       <Sidebar workspaceId={workspaceId!} />
       <InfoSection
         workspaceId={workspaceId!}
@@ -125,6 +125,6 @@ export default function Workspace() {
           </div>
         )}
       </MainContent>
-    </>
+    </div>
   );
 }

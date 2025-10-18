@@ -96,7 +96,7 @@ export default function Channel() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-screen w-full">
       <Sidebar workspaceId={workspaceId!} />
       <InfoSection
         workspaceId={workspaceId!}
