@@ -22,6 +22,7 @@ export default function Channel() {
   const [channel, setChannel] = useState<ChannelType | null>(null);
   const [allChannels, setAllChannels] = useState<ChannelType[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   const {
@@ -74,7 +75,7 @@ export default function Channel() {
         setChannel(channelData);
       }
 
-      // Fetch all workspace channels
+      // Fetch all workspace channels (that the user can see per RLS)
       const { data: channelsData } = await supabase
         .from("channels")
         .select("*")
@@ -87,6 +88,28 @@ export default function Channel() {
           channels: channelsData.map(c => ({ id: c.id, name: c.name }))
         });
         setAllChannels(channelsData);
+      }
+
+      // Fetch workspace members
+      const { data: workspaceRow } = await supabase
+        .from("workspaces")
+        .select("members")
+        .eq("id", workspaceId)
+        .single();
+
+      const memberIds: string[] = workspaceRow?.members || [];
+      if (memberIds.length) {
+        const { data: membersData } = await supabase
+          .from("users")
+          .select("*")
+          .in("id", memberIds);
+
+        if (membersData) {
+          console.log("📡 [Channel] Workspace members loaded", { count: membersData.length });
+          setMembers(membersData);
+        }
+      } else {
+        setMembers([]);
       }
     } catch (error) {
       console.error("❌ [Channel] Error loading channel data:", error);
@@ -155,7 +178,7 @@ export default function Channel() {
       <InfoSection
         workspaceId={workspaceId!}
         channels={allChannels}
-        members={[]}
+        members={members}
         currentUserId={currentUser.id}
       />
       <MainContent>
